@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-
+import numpy as np
 import rospy
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
+from scipy.spatial import KDTree
 
 import math
 
@@ -33,20 +34,69 @@ class WaypointUpdater(object):
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
 
-
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
-        # TODO: Add other member variables you need below
+        #Init further necessary member variables
+        self.pose = None
+        self.base_waypoints = None
+        self.waypoints_2d = None
+        self.waypoint_tree = None
 
-        rospy.spin()
+        # Run node
+        self.loop()
+
+    def loop(self):
+        """Runs the main loop of this node"""
+        rate = rospy.Rate(50)
+
+        while not rospy.is_shutdown():
+            if self.pose and self.base_waypoints:
+                # Get closest waypoint
+                closest_waypoint_idx = self.get_closest_waypoint_idx()
+                self.publish_waypoints(closest_waypoint_idx)
+            rate.sleep()
+
+    def get_closest_waypoint_idx(self):
+        """Checks for the ID of the closest waypoint ahead of the car"""
+        # Find closest waypoint (could be ahead or behind)
+        x = self.pose.pose.position.x
+        y = self.pose.pose.position.y
+        closest_idx = self.waypoint_tree.query([x,y], 1)[1]
+
+        # Make sure to choose the one ahead of the car
+        closest_coord = self.waypoints_2d[closest_idx]
+        prev_coord = self.waypoints_2d[closest_idx-1]
+
+        # Usage of an hyperplane through closest_coord
+        cl_vect = np.array(closest_coord)
+        prev_vect = np.array(prev_coord)
+        pos_vect = np.array([x,y])
+        # Use dot product: if both vectors are with the same orientation
+        # the product is positive -> closest point is behind the car -> ID+1
+        # otherwise: the found closest point is ahead -> done
+        val = np.dot(cl_vect-prev_vect, pos_vect-cl_vect)
+        if val >0:
+            closest_idx = (closest_idx+1) % len(self.waypoints_2d)
+        return closest_idx
+
+    def publish_waypoints(self, closest_idx):
+        """Publishes the next N waypoints the car should drive through"""
+        lane = Lane()
+        lane.header = self.base_waypoints.header
+        lane.waypoints = self.base_waypoints.waypoints[closest_idx:closest_idx+LOOKAHEAD_WPS]
+        self.final_waypoints_pub.publish(lane)
 
     def pose_cb(self, msg):
-        # TODO: Implement
-        pass
+        """Callback function which stores the message received over the /current_pose topic"""
+        self.pose = msg
 
     def waypoints_cb(self, waypoints):
-        # TODO: Implement
-        pass
+        """Callback function which stores the base_waypoints received over the /base_waypoints topic and
+        initializes the waypoint_tree"""
+        self.base_waypoints = waypoints
+        if not self.waypoints_2d:
+            self.waypoints_2d = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in waypoints.waypoints]
+            self.waypoint_tree = KDTree(self.waypoints_2d)
 
     def traffic_cb(self, msg):
         # TODO: Callback for /traffic_waypoint message. Implement
