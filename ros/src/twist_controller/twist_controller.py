@@ -11,6 +11,9 @@ class Controller(object):
     def __init__(self, vehicle_mass, fuel_capacity, brake_deadband, decel_limit,
                  accel_limit, wheel_radius, wheel_base, steer_ratio,
                  max_lat_accel, max_steer_angle):
+        # Load max velocity
+        self.max_speed = rospy.get_param('/waypoint_loader/velocity')*0.621371 # max velocity in mph
+
         # Set up Controller for steering
         min_speed = 0.1
         self.yaw_controller = YawController(wheel_base, steer_ratio, min_speed, max_lat_accel, max_steer_angle)
@@ -66,12 +69,19 @@ class Controller(object):
 
         throttle = self.throttle_controller.step(vel_error, sample_time)
         brake = 0.
-        # Check if car should stand or brake, otherwise accel as calced above
+        # Check if car should stand, brake, or has reached the speed_limit
+        # otherwise accel as calced above
         if linear_vel == 0. and current_vel < self.min_speed:
             throttle = 0.
+            self.throttle_controller.reset()
             brake = 700 #Nm -> Force to hold vehicle in place if stopped at red light
+        elif current_vel >= self.max_speed:
+            throttle = 0.
+            rospy.loginfo("Car reached maximum of allowed speed at ", self.max_speed, " mph")
+            self.throttle_controller.reset()
         elif throttle < 0.1 and vel_error < 0:
             throttle = 0.
+            self.throttle_controller.reset()
             decel = max(vel_error, self.decel_limit)
             brake = abs(decel) * self.vehicle_mass * self.wheel_radius # Torque in Nm
 

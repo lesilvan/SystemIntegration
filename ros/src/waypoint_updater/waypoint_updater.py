@@ -132,7 +132,7 @@ class WaypointUpdater(object):
 
     def traffic_cb(self, msg):
         """Callback function which stores the stopline_wp_idx received over the /traffic_waypoint topic"""
-        self.stopline_wp_idx = msg.data 
+        self.stopline_wp_idx = msg.data
         rospy.loginfo("Stopline wp_index received:  " +str(msg.data))
 
     def obstacle_cb(self, msg):
@@ -142,9 +142,6 @@ class WaypointUpdater(object):
     def get_waypoint_velocity(self, waypoint):
         return waypoint.twist.twist.linear.x
 
-    def set_waypoint_velocity(self, waypoints, waypoint, velocity):
-        waypoints[waypoint].twist.twist.linear.x = velocity
-
     def distance(self, waypoints, wp1, wp2):
         dist = 0
         dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
@@ -152,7 +149,6 @@ class WaypointUpdater(object):
             dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
             wp1 = i
         return dist
-
 
 if __name__ == '__main__':
     try:
