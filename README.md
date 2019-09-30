@@ -2,6 +2,12 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
 
 Please use **one** of the two installation options, either native **or** docker installation.
 
+
+### Concept behind traffic light detection
+The traffic light detection is based on two steps. The first step is trying to identify the traffic light in the image coming from the front camera in the car. This step is using a pretrained model from the [Zoo](https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/detection_model_zoo.md). It is using the **ssdlite_mobilenet_v2_coco** model to be exact which was trained on the [COCO dataset](http://cocodataset.org/#home) and reached a performance of 22 COCO mAP with a speed of 27 ms on the reference machine. So it is one of the fastest and at the same time quite reasonable model. The usage of this model is allowing an future extention as it also detects pedestrians, other cars, ...
+
+In the second step, the original image is cropped around the detected traffic light and resized to a standard of 16x32 pixels. Afterwards it is feed into another model which was trained on image data of traffic lights with labels being "red", "yellow", or "green". Further details to the training, look and performance of this model can be found in [this .ipynb file.](TL_handling/TLDetector_and_TLClassifier.ipynb)
+
 ### Native Installation
 
 * Be sure that your workstation is running Ubuntu 16.04 Xenial Xerus or Ubuntu 14.04 Trusty Tahir. [Ubuntu downloads can be found here](https://www.ubuntu.com/download/desktop).
