@@ -39,12 +39,12 @@ To set up port forwarding, please refer to the "uWebSocketIO Starter Guide" foun
 
 1. Clone the project repository
 ```bash
-git clone https://github.com/udacity/CarND-Capstone.git
+git clone https://github.com/the-beses11/SystemIntegration.git
 ```
 
 2. Install python dependencies
 ```bash
-cd CarND-Capstone
+cd SystemIntegration
 pip install -r requirements.txt
 ```
 3. Make and run styx
@@ -87,4 +87,3 @@ Specific to these libraries, the simulator grader and Carla use the following:
 | OpenCV | 3.2.0-dev | 2.4.8 |
 | OpenMP | N/A | N/A |
 
-We are working on a fix to line up the OpenCV versions between the two.
